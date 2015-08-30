@@ -11,6 +11,8 @@
 
 import UIKit
 import MultipeerConnectivity
+import CoreMotion
+import SceneKit
 
 class ViewController: UIViewController, MCNearbyServiceAdvertiserDelegate, MCNearbyServiceBrowserDelegate, MCSessionDelegate, NSStreamDelegate
 {
@@ -44,16 +46,97 @@ class ViewController: UIViewController, MCNearbyServiceAdvertiserDelegate, MCNea
             label.text = "iPad"
             
             initialiseAdvertising()
+            setupSceneKit()
         }
         else
         {
             label.text = "iPhone"
             
             initialiseBrowsing()
+            setupMotionControl()
         }
 
     }
+    
+    // MARK: Simple SceneKit for iPad
 
+    var sceneKitView: SCNView?
+    var geometryNode: SCNNode?
+    
+    func setupSceneKit()
+    {
+        sceneKitView = SCNView()
+        
+        if let sceneKitView = sceneKitView
+        {
+            view.addSubview(sceneKitView)
+            
+            sceneKitView.bounds = view.frame.insetBy(dx: 50, dy: 50)
+            
+            sceneKitView.scene = SCNScene()
+            
+            let cameraNode = SCNNode()
+            cameraNode.position = SCNVector3(x: 0, y: 0, z: 20)
+            
+            let camera = SCNCamera()
+            camera.xFov = 40
+            camera.yFov = 40
+            
+            cameraNode.camera = camera
+            sceneKitView.scene!.rootNode.addChildNode(cameraNode)
+            
+            geometryNode = SCNNode(geometry: SCNBox(width: 5, height: 5, length: 5, chamferRadius: 0.5))
+            geometryNode!.position = SCNVector3(x: 0, y: 0, z: 0)
+            sceneKitView.scene!.rootNode.addChildNode(geometryNode!)
+            
+            let omniLight = SCNLight()
+            omniLight.type = SCNLightTypeOmni
+            omniLight.color = UIColor(white: 1.0, alpha: 1.0)
+            let omniLightNode = SCNNode()
+            omniLightNode.light = omniLight
+            omniLightNode.position = SCNVector3(x: -5, y: 8, z: 10)
+            
+            sceneKitView.scene!.rootNode.addChildNode(omniLightNode)
+        }
+    }
+    
+    // MARK: Motion Control for iPhone
+    
+    var initialAttitude: MotionControllerAttitude?
+    var attitude: MotionControllerAttitude?
+    let motionManager = CMMotionManager()
+    
+    func setupMotionControl()
+    {
+        guard motionManager.gyroAvailable else
+        {
+            fatalError("CMMotionManager not available.")
+        }
+        
+        let queue = NSOperationQueue.mainQueue
+        
+        motionManager.deviceMotionUpdateInterval = 1 / 30
+        
+        motionManager.startDeviceMotionUpdatesToQueue(queue())
+        {
+            (deviceMotionData: CMDeviceMotion?, error: NSError?) in
+            
+            if let deviceMotionData = deviceMotionData
+            {
+                if (self.initialAttitude == nil)
+                {
+                    self.initialAttitude = MotionControllerAttitude(roll: deviceMotionData.attitude.roll,
+                        pitch: deviceMotionData.attitude.pitch,
+                        yaw: deviceMotionData.attitude.yaw)
+                }
+              
+                self.attitude = MotionControllerAttitude(roll: self.initialAttitude!.roll - Float(deviceMotionData.attitude.roll),
+                    pitch: self.initialAttitude!.pitch - Float(deviceMotionData.attitude.pitch),
+                    yaw: self.initialAttitude!.yaw - Float(deviceMotionData.attitude.yaw))
+            }
+        }
+    }
+    
     // MARK: MCNearbyServiceBrowserDelegate (iPhone is browser)
     
     var streamTargetPeer: MCPeerID?
@@ -73,16 +156,15 @@ class ViewController: UIViewController, MCNearbyServiceAdvertiserDelegate, MCNea
  
         streamTargetPeer = peerID
         
-        browser.invitePeer(peerID, toSession: session, withContext: nil, timeout: 10)
-        
-        // NSTimer.scheduledTimerWithTimeInterval(1/30, target: self, selector: "timerHandler", userInfo: nil, repeats: true)
+        browser.invitePeer(peerID, toSession: session, withContext: nil, timeout: 120)
         
         displayLink = CADisplayLink(target: self, selector: Selector("step"))
         displayLink?.addToRunLoop(NSRunLoop.mainRunLoop(), forMode: NSDefaultRunLoopMode)
+        
+        //NSTimer.scheduledTimerWithTimeInterval(1/30, target: self, selector: "step", userInfo: nil, repeats: true)
     }
     
 
-    
     func startStream()
     {
         guard let streamTargetPeer = streamTargetPeer where outputStream == nil else
@@ -92,7 +174,7 @@ class ViewController: UIViewController, MCNearbyServiceAdvertiserDelegate, MCNea
         
         do
         {
-            outputStream =  try session.startStreamWithName("MotionControllerStream", toPeer: streamTargetPeer)
+            outputStream =  try session.startStreamWithName("SimonStream", toPeer: streamTargetPeer)
       
             outputStream?.scheduleInRunLoop(NSRunLoop.mainRunLoop(), forMode: NSDefaultRunLoopMode)
             
@@ -103,9 +185,7 @@ class ViewController: UIViewController, MCNearbyServiceAdvertiserDelegate, MCNea
             print("unable to start stream!! \(error)")
         }
     }
-    
-    var foo:Float = 1
-    
+  
     func step()
     {
         startStream()
@@ -116,15 +196,11 @@ class ViewController: UIViewController, MCNearbyServiceAdvertiserDelegate, MCNea
             return
         }
         
-        if outputStream.hasSpaceAvailable
+        if let attitude = attitude where outputStream.hasSpaceAvailable
         {
-            let attitude = MotionControllerAttitude(roll: foo + 0.33, pitch: foo + 0.66, yaw: foo + 0.99)
-            
-            self.label.text = "stream: \(attitude.roll) | \(attitude.pitch) | \(attitude.yaw)"
+            self.label.text = "stream: \(attitude.roll.radiansToDegrees()) | \(attitude.pitch.radiansToDegrees()) | \(attitude.yaw.radiansToDegrees())"
             
             outputStream.write(attitude.toBytes(), maxLength: 12)
-            
-            foo++
         }
         else
         {
@@ -156,7 +232,36 @@ class ViewController: UIViewController, MCNearbyServiceAdvertiserDelegate, MCNea
     
     func session(session: MCSession, peer peerID: MCPeerID, didChangeState state: MCSessionState)
     {
-        print("\(UIDevice.currentDevice().userInterfaceIdiom.rawValue) didChangeState: \(state.rawValue)")
+        let stateName:String
+        
+        switch state
+        {
+        case MCSessionState.Connected:
+            stateName = "connected"
+        case MCSessionState.Connecting:
+            stateName = "connecting"
+        case MCSessionState.NotConnected:
+            stateName = "not connected"
+        }
+        
+        let deviceName:String
+        
+        switch UIDevice.currentDevice().userInterfaceIdiom
+        {
+        case UIUserInterfaceIdiom.Pad:
+            deviceName = "iPad"
+        case UIUserInterfaceIdiom.Phone:
+            deviceName = "iPhone"
+        case UIUserInterfaceIdiom.Unspecified:
+            deviceName = "Unspecified"
+        }
+        
+        print("\(deviceName) didChangeState: \(stateName)")
+        
+        dispatch_async(dispatch_get_main_queue())
+        {
+            self.label.text = stateName
+        }
     }
     
     func session(session: MCSession, didReceiveData data: NSData, fromPeer peerID: MCPeerID)
@@ -174,14 +279,22 @@ class ViewController: UIViewController, MCNearbyServiceAdvertiserDelegate, MCNea
     
     func stream(stream: NSStream, handleEvent eventCode: NSStreamEvent)
     {
+        print("stream in....!")
+        
         if let inputStream = stream as? NSInputStream where eventCode == NSStreamEvent.HasBytesAvailable
         {
             var bytes = [UInt8](count:12, repeatedValue: 0)
             inputStream.read(&bytes, maxLength: 12)
 
-            let foo = MotionControllerAttitude(fromBytes: bytes)
+            let streamedAttitude = MotionControllerAttitude(fromBytes: bytes)
             
-            self.label.text = "stream: \(foo.roll) | \(foo.pitch) | \(foo.yaw)"
+            dispatch_async(dispatch_get_main_queue())
+            {
+                self.label.text = "stream: \(streamedAttitude.roll.radiansToDegrees()) | \(streamedAttitude.pitch.radiansToDegrees()) | \(streamedAttitude.yaw.radiansToDegrees())"
+                
+                self.geometryNode?.eulerAngles = SCNVector3(x: -streamedAttitude.pitch, y: streamedAttitude.yaw, z: streamedAttitude.roll)
+            
+            }
         }
     }
     
@@ -197,9 +310,19 @@ class ViewController: UIViewController, MCNearbyServiceAdvertiserDelegate, MCNea
     
     override func viewDidLayoutSubviews()
     {
-        label.frame = view.bounds
+        label.frame = CGRect(x: 0, y: topLayoutGuide.length, width: view.frame.width, height: label.intrinsicContentSize().height)
+        
+        sceneKitView?.frame = view.frame.insetBy(dx: 50, dy: 50)
     }
     
+}
+
+extension Float
+{
+    func radiansToDegrees() -> Float
+    {
+        return round(self * (180 / Float(M_PI)))
+    }
 }
 
 struct MotionControllerAttitude
@@ -213,6 +336,13 @@ struct MotionControllerAttitude
         self.roll = roll
         self.pitch = pitch
         self.yaw = yaw
+    }
+    
+    init(roll: Double, pitch: Double, yaw: Double)
+    {
+        self.roll = Float(roll)
+        self.pitch = Float(pitch)
+        self.yaw = Float(yaw)
     }
     
     init(fromBytes: [UInt8])

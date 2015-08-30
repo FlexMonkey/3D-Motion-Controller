@@ -2,7 +2,7 @@
 //  ViewController.swift
 //  3D Motion Controller
 //
-//  Created by SIMON_NON_ADMIN on 29/08/2015.
+//  Created by Simon Gladman on 29/08/2015.
 //  Copyright © 2015 Simon Gladman. All rights reserved.
 //
 // Thanks to http://www.ralfebert.de/tutorials/ios-swift-multipeer-connectivity/
@@ -85,7 +85,7 @@ class ViewController: UIViewController, MCNearbyServiceAdvertiserDelegate, MCNea
             cameraNode.camera = camera
             sceneKitView.scene!.rootNode.addChildNode(cameraNode)
             
-            geometryNode = SCNNode(geometry: SCNBox(width: 5, height: 5, length: 5, chamferRadius: 0.5))
+            geometryNode = SCNNode(geometry: SCNBox(width: 10, height: 10, length: 10, chamferRadius: 1))
             geometryNode!.position = SCNVector3(x: 0, y: 0, z: 0)
             sceneKitView.scene!.rootNode.addChildNode(geometryNode!)
             
@@ -94,7 +94,7 @@ class ViewController: UIViewController, MCNearbyServiceAdvertiserDelegate, MCNea
             omniLight.color = UIColor(white: 1.0, alpha: 1.0)
             let omniLightNode = SCNNode()
             omniLightNode.light = omniLight
-            omniLightNode.position = SCNVector3(x: -5, y: 8, z: 10)
+            omniLightNode.position = SCNVector3(x: -25, y: 25, z: 25)
             
             sceneKitView.scene!.rootNode.addChildNode(omniLightNode)
         }
@@ -160,8 +160,6 @@ class ViewController: UIViewController, MCNearbyServiceAdvertiserDelegate, MCNea
         
         displayLink = CADisplayLink(target: self, selector: Selector("step"))
         displayLink?.addToRunLoop(NSRunLoop.mainRunLoop(), forMode: NSDefaultRunLoopMode)
-        
-        //NSTimer.scheduledTimerWithTimeInterval(1/30, target: self, selector: "step", userInfo: nil, repeats: true)
     }
     
 
@@ -174,7 +172,7 @@ class ViewController: UIViewController, MCNearbyServiceAdvertiserDelegate, MCNea
         
         do
         {
-            outputStream =  try session.startStreamWithName("SimonStream", toPeer: streamTargetPeer)
+            outputStream =  try session.startStreamWithName("MotionControlStream", toPeer: streamTargetPeer)
       
             outputStream?.scheduleInRunLoop(NSRunLoop.mainRunLoop(), forMode: NSDefaultRunLoopMode)
             
@@ -255,12 +253,10 @@ class ViewController: UIViewController, MCNearbyServiceAdvertiserDelegate, MCNea
         case UIUserInterfaceIdiom.Unspecified:
             deviceName = "Unspecified"
         }
-        
-        print("\(deviceName) didChangeState: \(stateName)")
-        
+
         dispatch_async(dispatch_get_main_queue())
         {
-            self.label.text = stateName
+            self.label.text = "\(deviceName) didChangeState: \(stateName)"
         }
     }
     
@@ -279,8 +275,6 @@ class ViewController: UIViewController, MCNearbyServiceAdvertiserDelegate, MCNea
     
     func stream(stream: NSStream, handleEvent eventCode: NSStreamEvent)
     {
-        print("stream in....!")
-        
         if let inputStream = stream as? NSInputStream where eventCode == NSStreamEvent.HasBytesAvailable
         {
             var bytes = [UInt8](count:12, repeatedValue: 0)
@@ -290,7 +284,7 @@ class ViewController: UIViewController, MCNearbyServiceAdvertiserDelegate, MCNea
             
             dispatch_async(dispatch_get_main_queue())
             {
-                self.label.text = "stream: \(streamedAttitude.roll.radiansToDegrees()) | \(streamedAttitude.pitch.radiansToDegrees()) | \(streamedAttitude.yaw.radiansToDegrees())"
+                self.label.text = "stream in: \(streamedAttitude.roll.radiansToDegrees()) | \(streamedAttitude.pitch.radiansToDegrees()) | \(streamedAttitude.yaw.radiansToDegrees())"
                 
                 self.geometryNode?.eulerAngles = SCNVector3(x: -streamedAttitude.pitch, y: streamedAttitude.yaw, z: streamedAttitude.roll)
             

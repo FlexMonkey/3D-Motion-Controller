@@ -16,6 +16,8 @@ class ViewController: UIViewController, MCNearbyServiceAdvertiserDelegate, MCNea
 {
     let label = UILabel()
 
+    var displayLink: CADisplayLink?
+    
     let serviceType = "motion-control"
     let peerID = MCPeerID(displayName: UIDevice.currentDevice().name)
     
@@ -73,7 +75,10 @@ class ViewController: UIViewController, MCNearbyServiceAdvertiserDelegate, MCNea
         
         browser.invitePeer(peerID, toSession: session, withContext: nil, timeout: 10)
         
-        NSTimer.scheduledTimerWithTimeInterval(1/30, target: self, selector: "timerHandler", userInfo: nil, repeats: true)
+        // NSTimer.scheduledTimerWithTimeInterval(1/30, target: self, selector: "timerHandler", userInfo: nil, repeats: true)
+        
+        displayLink = CADisplayLink(target: self, selector: Selector("step"))
+        displayLink?.addToRunLoop(NSRunLoop.mainRunLoop(), forMode: NSDefaultRunLoopMode)
     }
     
 
@@ -95,13 +100,13 @@ class ViewController: UIViewController, MCNearbyServiceAdvertiserDelegate, MCNea
         }
         catch
         {
-            print("unable to strat stream!! \(error)")
+            print("unable to start stream!! \(error)")
         }
     }
     
     var foo:Float = 1
     
-    func timerHandler()
+    func step()
     {
         startStream()
         

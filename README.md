@@ -9,9 +9,9 @@ The Multipeer Connectivity framework provides peer to peer communication between
 
 I won't go in the the finer details of the framework, these are explained beautifully in the three main articles I used to get me up to speed:
 
-iOS & Swift Tutorial: Multipeer Connectivity by Ralf Ebert
-Multipeer Connectivity in Games at objc
-Multipeer Connectivity by NSHipster
+* [iOS & Swift Tutorial: Multipeer Connectivity by Ralf Ebert](http://www.ralfebert.de/tutorials/ios-swift-multipeer-connectivity/)
+* [Multipeer Connectivity in Games at objc](https://www.objc.io/issues/18-games/multipeer-connectivity-for-games/)
+* [Multipeer Connectivity by NSHipster](http://nshipster.com/multipeer-connectivity/)
 
 My single codebase does the job of both the iPad "Rotating Cube" app which displays a cube floating in space and the iPhone "3D Mouse" app which controls the 3D rotation of the cube. As this is more of a proof-of-concept project rather than a piece of production code, everything is in a single view controller, this isn't good architecture, but when rapidly moving between the two "modes", it was super quick to work in.
 The iPad "Rotating Cube App"

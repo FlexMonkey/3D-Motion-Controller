@@ -25,14 +25,14 @@ class ViewController: UIViewController, MCNearbyServiceAdvertiserDelegate, MCNea
     
     var serviceAdvertiser : MCNearbyServiceAdvertiser!
     var serviceBrowser : MCNearbyServiceBrowser!
-    
+
     lazy var session : MCSession =
     {
         let session = MCSession(peer: self.peerID, securityIdentity: nil, encryptionPreference: MCEncryptionPreference.None)
         session.delegate = self
         return session
     }()
-    
+
     override func viewDidLoad()
     {
         super.viewDidLoad()
@@ -44,6 +44,9 @@ class ViewController: UIViewController, MCNearbyServiceAdvertiserDelegate, MCNea
         if UIDevice.currentDevice().userInterfaceIdiom == UIUserInterfaceIdiom.Pad
         {
             label.text = "iPad"
+            
+            view.backgroundColor = UIColor.blackColor()
+            label.textColor = UIColor.whiteColor()
             
             initialiseAdvertising()
             setupSceneKit()
@@ -75,6 +78,8 @@ class ViewController: UIViewController, MCNearbyServiceAdvertiserDelegate, MCNea
             
             sceneKitView.scene = SCNScene()
             
+            sceneKitView.backgroundColor = UIColor.blackColor()
+            
             let cameraNode = SCNNode()
             cameraNode.position = SCNVector3(x: 0, y: 0, z: 20)
             
@@ -97,6 +102,14 @@ class ViewController: UIViewController, MCNearbyServiceAdvertiserDelegate, MCNea
             omniLightNode.position = SCNVector3(x: -25, y: 25, z: 25)
             
             sceneKitView.scene!.rootNode.addChildNode(omniLightNode)
+            
+            let ambientLight = SCNLight()
+            ambientLight.type = SCNLightTypeAmbient
+            ambientLight.color = UIColor(white: 0.25, alpha: 1.0)
+            let ambientLightNode = SCNNode()
+            ambientLightNode.light = ambientLight
+            
+            sceneKitView.scene!.rootNode.addChildNode(ambientLightNode)
         }
     }
     
@@ -152,7 +165,7 @@ class ViewController: UIViewController, MCNearbyServiceAdvertiserDelegate, MCNea
     
     func browser(browser: MCNearbyServiceBrowser, foundPeer peerID: MCPeerID, withDiscoveryInfo info: [String : String]?)
     {
-        label.text = "Found Peer! \(peerID)"
+        print( "Found Peer! \(peerID)")
  
         streamTargetPeer = peerID
         
@@ -304,7 +317,14 @@ class ViewController: UIViewController, MCNearbyServiceAdvertiserDelegate, MCNea
     
     override func viewDidLayoutSubviews()
     {
-        label.frame = CGRect(x: 0, y: topLayoutGuide.length, width: view.frame.width, height: label.intrinsicContentSize().height)
+        if UIDevice.currentDevice().userInterfaceIdiom == UIUserInterfaceIdiom.Pad
+        {
+            label.frame = CGRect(x: 0, y: topLayoutGuide.length, width: view.frame.width, height: label.intrinsicContentSize().height)
+        }
+        else
+        {
+            label.frame = view.bounds
+        }
         
         sceneKitView?.frame = view.frame.insetBy(dx: 50, dy: 50)
     }

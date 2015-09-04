@@ -14,7 +14,7 @@ I won't go in the the finer details of the framework, these are explained beauti
 * [Multipeer Connectivity by NSHipster](http://nshipster.com/multipeer-connectivity/)
 
 My single codebase does the job of both the iPad "Rotating Cube" app which displays a cube floating in space and the iPhone "3D Mouse" app which controls the 3D rotation of the cube. As this is more of a proof-of-concept project rather than a piece of production code, everything is in a single view controller, this isn't good architecture, but when rapidly moving between the two "modes", it was super quick to work in.
-The iPad "Rotating Cube App"
+##The iPad "Rotating Cube App"
 
 Apps using Multipeer Connectivity can either advertise a service or browse for a service. In my project, the Rotating Cube App takes the role of the advertiser so my view controller implements the MCNearbyServiceAdvertiserDelegate protocol. After I start advertising:
 

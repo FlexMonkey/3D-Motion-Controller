@@ -263,7 +263,7 @@ class ViewController: UIViewController, MCNearbyServiceAdvertiserDelegate, MCNea
             deviceName = "iPad"
         case UIUserInterfaceIdiom.Phone:
             deviceName = "iPhone"
-        case UIUserInterfaceIdiom.Unspecified:
+        default:
             deviceName = "Unspecified"
         }
 

@@ -14,7 +14,7 @@ I won't go in the the finer details of the framework, these are explained beauti
 * [Multipeer Connectivity by NSHipster](http://nshipster.com/multipeer-connectivity/)
 
 My single codebase does the job of both the iPad "Rotating Cube" app which displays a cube floating in space and the iPhone "3D Mouse" app which controls the 3D rotation of the cube. As this is more of a proof-of-concept project rather than a piece of production code, everything is in a single view controller, this isn't good architecture, but when rapidly moving between the two "modes", it was super quick to work in.
-##The iPad "Rotating Cube App"
+## The iPad "Rotating Cube App"
 
 Apps using Multipeer Connectivity can either advertise a service or browse for a service. In my project, the Rotating Cube App takes the role of the advertiser so my view controller implements the MCNearbyServiceAdvertiserDelegate protocol. After I start advertising:
 
@@ -39,7 +39,7 @@ Apps using Multipeer Connectivity can either advertise a service or browse for a
     }
 ```
     
-##The iPhone "3D Mouse App"
+## The iPhone "3D Mouse App"
 
 Since the Rotating Cube App is the advertiser, my 3D Mouse App is the browser. So my monolithic view controller also implements MCNearbyServiceBrowserDelegate and, much like the advertiser, it starts browsing:
 
@@ -91,7 +91,7 @@ Here's where I also instantiate a CADisplayLink to invoke a step() method with e
     }
 ```
 
-##Serialising and Deserialising Float Values
+## Serialising and Deserialising Float Values
 
 The attitude (of type MotionControllerAttitude) struct contains three float values for roll, pitch and yaw, but the stream only supports UInt8 bytes. To serialise and deserialise that data, I found these two functions by Rintaro on StackOverflow that take any type and convert to and from arrays of UInt8:
 
@@ -135,7 +135,7 @@ My MotionControllerAttitude struct has a toBytes() method that uses toByteArray(
 
 This is pretty brittle code - again, this is just a proof of concept!
 
-##Rotating the Cube
+## Rotating the Cube
 
 Back in the Rotating Cube App, because the view controller is also acting as the NSStreamDelegate for the steam (you can see now things are yearning to be refactored!), the stream() method is invoked when the iPad receives a packet of data.
 
@@ -162,7 +162,7 @@ I need to check the incoming stream is actually a NSInputStream and it has bytes
     }
 ```
 
-##In Conclusion
+## In Conclusion
 
 This project demonstrates the power of Multipeer Connectivity: whether you're creating games or content creation apps, multiple iOS devices can work together and stream any type of data quickly and reliably. Conceivably, a roomful of iPads could be all hooked up as peers and act as a render farm or a huge single multi-device display.
 
